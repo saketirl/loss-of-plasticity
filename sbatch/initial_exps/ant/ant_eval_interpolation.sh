@@ -1,0 +1,1 @@
+python run_eval_ckpt.py -c cfg/ant/cbp.yml -m data/ant/cbp_1/1.pth -f data/ant/cbp_2/2.pth -o data/ant/cbp_eval/eval_1_2.pkl &> eval_1.out &

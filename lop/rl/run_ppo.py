@@ -74,7 +74,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', required=False, type=str, default='./cfg/ant/std.yml')
     parser.add_argument('-s', '--seed', required=False, type=int, default="1")
-    parser.add_argument('-d', '--device', required=False, default='cpu')
+    parser.add_argument('-d', '--device', required=False, default='cuda')
 
     args = parser.parse_args()
     if args.device: device = args.device
@@ -170,6 +170,8 @@ def main():
     to_log = cfg['to_log']
     agent = Agent(pol, learner, device=device, to_log_features=(len(to_log) > 0))
 
+    print(cfg['ckpt_path'], os.path.exists(cfg['ckpt_path']))
+    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
     # Load checkpoint
     if os.path.exists(cfg['ckpt_path']):
         start_step, agent.learner = load_checkpoint(cfg, device, agent.learner)
