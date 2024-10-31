@@ -1,6 +1,6 @@
 env_name: 'Ant-v3'
 act_type: 'ReLU'
-n_steps: 1e7
+n_steps: 1
 g: 0.99
 lm: 0.95
 u_epi_ups: 0
@@ -17,5 +17,5 @@ beta_1: 0.99
 beta_2: 0.99
 wd: 1e-3
 to_log: ['pol_features_activity', 'pol_weights', 'val_weights', 'stable_rank']
-dir: 'data/ant/l2/'
+dir: 'data/ant/l2_6_0/'
 label: 'PPO+L2'

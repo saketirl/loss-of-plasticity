@@ -3,8 +3,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
+
+plt.rcParams.update({'font.size': 22})
+
 log_path = sys.argv[1]
-log_path_fname = log_path.split('/')[-1].split('.')[0]
+log_path_arr = log_path.split('/')
+log_path_fname = log_path_arr[-2] + "_" + log_path_arr[-1].split('.')[0]
 window_size = 100
 
 # Load the data from the pickle file
@@ -13,7 +17,6 @@ with open(log_path, 'rb') as f:
 
 # Extract 'rets' from the data dictionary
 rets = data_dict['rets']
-
 
 
 # Check if 'rets' is a NumPy array; if not, convert it

@@ -1,6 +1,6 @@
 env_name: 'Ant-v3'
 act_type: 'ReLU'
-n_steps: 1e7
+n_steps: 1
 g: 0.99
 lm: 0.95
 u_epi_ups: 0
@@ -13,9 +13,13 @@ u_adv_scl: 1
 clip_eps: 0.2
 ob_norm: 0
 rew_norm: 0
+rr: 1e-4
+mt: 10000
+util_type_val: 'contribution'
+util_type_pol: 'contribution'
 beta_1: 0.99
 beta_2: 0.99
-wd: 1e-3
+wd: 1e-4
+dir: 'data/ant/cbp_5_0/'
 to_log: ['pol_features_activity', 'pol_weights', 'val_weights', 'stable_rank']
-dir: 'data/ant/l2/'
-label: 'PPO+L2'
+label: 'CBP'

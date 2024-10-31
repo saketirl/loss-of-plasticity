@@ -1,1 +1,3 @@
 python run_eval_ckpt.py -c cfg/ant/cbp.yml -m data/ant/cbp_1/1.pth -f data/ant/cbp_2/2.pth -o data/ant/cbp_eval/eval_1_2.pkl &> eval_1.out &
+python run_eval_ckpt.py -c cfg/ant/l2.yml -m data/ant/l2_1/1.pth -f data/ant/l2_2/2.pth -o data/ant/l2_eval/eval_1_2.pkl &> eval_l2.out &
+python run_eval_ckpt.py -c cfg/ant/std.yml -m data/ant/std_1/1.pth -f data/ant/std_2/2.pth -o data/ant/std_eval/eval_1_2.pkl &> eval_std.out &

@@ -75,6 +75,9 @@ def main():
     parser.add_argument('-c', '--config', required=False, type=str, default='./cfg/ant/std.yml')
     parser.add_argument('-s', '--seed', required=False, type=int, default="1")
     parser.add_argument('-d', '--device', required=False, default='cuda')
+    parser.add_argument('-p', '--ckptsteps', required=False, type=int, default=-1)
+
+
 
     args = parser.parse_args()
     if args.device: device = args.device
@@ -102,7 +105,12 @@ def main():
     cfg.setdefault('perturb_scale', 0)
     cfg['n_steps'] = int(float(cfg['n_steps']))
     cfg['perturb_scale'] = float(cfg['perturb_scale'])
-    n_steps = cfg['n_steps']    
+    n_steps = cfg['n_steps']
+
+    if args.ckptsteps <= 0:
+        ckpt_steps = n_steps // 100
+    else:
+        ckpt_steps = args.ckptsteps
 
     # Set default values for CBP
     cfg.setdefault('mt', 10000)
@@ -275,7 +283,7 @@ def main():
                 agent.env = env
             o = env.reset()
 
-        if step % (n_steps//100) == 0 or step == n_steps-1:
+        if step % ckpt_steps == 0 or step == n_steps-1:
             # Save checkpoint
             save_checkpoint(cfg, step, agent.learner)
             # Save data logs
