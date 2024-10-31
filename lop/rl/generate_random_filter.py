@@ -1,4 +1,5 @@
 import os
+import copy
 import yaml
 import pickle
 import argparse
@@ -15,6 +16,7 @@ from lop.nets.valuefs import MLPVF
 from lop.algos.rl.agent import Agent
 from lop.algos.rl.ppo import PPO
 from datetime import datetime
+from itertools import product
 
 
 def get_weights(net):
@@ -27,7 +29,7 @@ def get_random_weights(weights):
         Produce a random direction that is a list of random Gaussian tensors
         with the same shape as the network's weights, so one direction entry per weight.
     """
-    return [torch.randn(w.size()) for w in weights]
+    return [torch.randn(w.size(), device=w.device) for w in weights]
 
 
 def normalize_direction(direction, weights, norm='filter'):
@@ -114,11 +116,36 @@ def load_checkpoint(path, device, learner):
     # Load step, model and optimizer states
     ckpt_dict = torch.load(path, map_location=device)
     opt_dict = ckpt_dict['opt']
+    step = ckpt_dict['step']
     learner.pol.load_state_dict(ckpt_dict['actor'])
     learner.vf.load_state_dict(ckpt_dict['critic'])
     learner.opt.load_state_dict(opt_dict)
     return step, learner
 
+
+def copy_and_set_weights(net, weights, directions=None, step=None):
+    """
+        Copy the network's weights and add it with a specified list of tensors
+        or change weights along directions with a step size.
+    """
+    new_net = copy.deepcopy(net)
+    if directions is None:
+        # You cannot specify a step length without a direction.
+        for (p, w) in zip(new_net.parameters(), weights):
+            p.data.copy_(w.type(type(p.data)))
+    else:
+        assert step is not None, 'If a direction is specified then step must be specified as well'
+
+        if len(directions) == 2:
+            dx = directions[0]
+            dy = directions[1]
+            changes = [d0*step[0] + d1*step[1] for (d0, d1) in zip(dx, dy)]
+        else:
+            changes = [d*step for d in directions[0]]
+
+        for (p, w, d) in zip(new_net.parameters(), weights, changes):
+            p.data = w + torch.tensor(d).type(type(w)).to(w.device)
+    return new_net
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -226,11 +253,21 @@ if __name__ == "__main__":
     print("Loading checkpoint")
     step, learner = load_checkpoint(args.model, args.device, learner)
 
-    tau_start = -0.25
-    tau_end = 1.25
-    tau_spacing = 0.01
-    x_direction = create_random_direction()
-    # tau_array = np.arange(tau_start, tau_end + tau_spacing, tau_spacing)
+    tau_start = -1
+    tau_end = 1
+    # DEBUGGING
+    n_taus = 2
+
+    pol_x_direction = create_random_direction(learner.pol)
+    pol_y_direction = create_random_direction(learner.pol)
+    weights = get_weights(learner.pol)  # a list of parameters.
+    pol_directions = [pol_x_direction, pol_y_direction]
+
+    # val_x_direction = create_random_direction(learner.vf)
+    # val_y_direction = create_random_direction(learner.vf)
+
+    tau_array = np.linspace(tau_start, tau_end, num=n_taus)
+    taus_array = list(product(tau_array, tau_array))
     epi_steps = 0
     # print(len(tau_array))
     print("******************************")
@@ -240,13 +277,14 @@ if __name__ == "__main__":
     jacobian_actions_data = []
     value_estimates_data = []
 
-    for idx, spaced_tau in enumerate(tau_array):
+    for idx, taus in enumerate(taus_array):
+        perturbed_pol = copy_and_set_weights(learner.pol, weights, directions=pol_directions, step=taus)
 
-        agent = Agent(learner.pol, learner, device=device)
+        agent = Agent(perturbed_pol, learner, device=device)
         ret = 0.0
         rets = []
         termination_steps = []
-        o = env.reset()
+        o, _ = env.reset()
 
         samples = []
 
@@ -254,7 +292,7 @@ if __name__ == "__main__":
 
         for step in range(num_steps):
             a, logp, dist, new_features = agent.get_action(o)
-            op, r, done, infos = env.step(a)
+            op, r, done, _, infos = env.step(a)
             epi_steps += 1
 
             o = op
@@ -266,11 +304,11 @@ if __name__ == "__main__":
                 termination_steps.append(step)
                 ret = 0
                 epi_steps = 0
-                o = env.reset()
+                o, _ = env.reset()
 
         ret_np = np.array(rets)
 
-        rets_data.append([spaced_tau, np.mean(ret_np), np.std(ret_np)])
+        rets_data.append([taus, np.mean(ret_np), np.std(ret_np)])
 
         jacobian_policy_norms = []
         jacobian_values = []
@@ -306,10 +344,10 @@ if __name__ == "__main__":
         value_estimates = np.array(value_estimates)
 
         #get mean and std and append to the data array
-        jacobian_values_data.append([spaced_tau, np.mean(jacobian_values), np.std(jacobian_values)])
-        jacobian_actions_data.append([spaced_tau, np.mean(jacobian_values),  np.mean(jacobian_policy_norms, axis=0),
+        jacobian_values_data.append([taus, np.mean(jacobian_values), np.std(jacobian_values)])
+        jacobian_actions_data.append([taus, np.mean(jacobian_values),  np.mean(jacobian_policy_norms, axis=0),
                                       np.std(jacobian_policy_norms, axis=0)])
-        value_estimates_data.append([spaced_tau, np.mean(value_estimates_data), np.std(value_estimates)])
+        value_estimates_data.append([taus, np.mean(value_estimates), np.std(value_estimates)])
 
 
         if idx % 20 == 0:
@@ -318,7 +356,7 @@ if __name__ == "__main__":
             # dd/mm/YY H:M:S
             dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
 
-            print("{} Done with tau: {}".format(dt_string, spaced_tau))
+            print("{} Done with tau: {}".format(dt_string, taus))
 
     estimated_vals = {"returns": rets_data,
                       "action_jacobians": jacobian_actions_data,
