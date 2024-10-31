@@ -308,7 +308,7 @@ if __name__ == "__main__":
 
         ret_np = np.array(rets)
 
-        rets_data.append([taus, np.mean(ret_np), np.std(ret_np)])
+        rets_data.append([*taus, np.mean(ret_np), np.std(ret_np)])
 
         jacobian_policy_norms = []
         jacobian_values = []
@@ -345,9 +345,9 @@ if __name__ == "__main__":
 
         #get mean and std and append to the data array
         jacobian_values_data.append([*taus, np.mean(jacobian_values), np.std(jacobian_values)])
-        jacobian_actions_data.append([taus, np.mean(jacobian_values),  np.mean(jacobian_policy_norms, axis=0),
+        jacobian_actions_data.append([*taus, np.mean(jacobian_values),  np.mean(jacobian_policy_norms, axis=0),
                                       np.std(jacobian_policy_norms, axis=0)])
-        value_estimates_data.append([taus, np.mean(value_estimates), np.std(value_estimates)])
+        value_estimates_data.append([*taus, np.mean(value_estimates), np.std(value_estimates)])
 
 
         if idx % 20 == 0:
