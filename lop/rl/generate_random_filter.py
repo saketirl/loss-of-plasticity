@@ -256,7 +256,7 @@ if __name__ == "__main__":
     tau_start = -1
     tau_end = 1
     # DEBUGGING
-    n_taus = 2
+    n_taus = 20
 
     pol_x_direction = create_random_direction(learner.pol)
     pol_y_direction = create_random_direction(learner.pol)
