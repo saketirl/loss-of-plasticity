@@ -256,7 +256,7 @@ if __name__ == "__main__":
     tau_start = -1
     tau_end = 1
     # DEBUGGING
-    n_taus = 20
+    n_taus = 2
 
     pol_x_direction = create_random_direction(learner.pol)
     pol_y_direction = create_random_direction(learner.pol)
@@ -292,13 +292,13 @@ if __name__ == "__main__":
 
         for step in range(num_steps):
             a, logp, dist, new_features = agent.get_action(o)
-            op, r, done, _, infos = env.step(a)
+            op, r, done, trunc, infos = env.step(a)
             epi_steps += 1
 
             o = op
             samples.append(o)
             ret += r
-            if done:
+            if done or trunc:
                 # print(step, "(", epi_steps, ") {0:.2f}".format(ret))
                 rets.append(ret)
                 termination_steps.append(step)
@@ -344,7 +344,7 @@ if __name__ == "__main__":
         value_estimates = np.array(value_estimates)
 
         #get mean and std and append to the data array
-        jacobian_values_data.append([taus, np.mean(jacobian_values), np.std(jacobian_values)])
+        jacobian_values_data.append([*taus, np.mean(jacobian_values), np.std(jacobian_values)])
         jacobian_actions_data.append([taus, np.mean(jacobian_values),  np.mean(jacobian_policy_norms, axis=0),
                                       np.std(jacobian_policy_norms, axis=0)])
         value_estimates_data.append([taus, np.mean(value_estimates), np.std(value_estimates)])
